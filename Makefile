@@ -5,7 +5,7 @@ BGQ_MODULES := /gpfs/DDNgpfs1/jimix/work/bgq/linux/build/roq/modules
 
 # version of Linux you built, you can find this by looking at the
 # directory that was created in $(BGQ_MODULES)/lib/modules
-BGQ_VERSION := 3.4.22-BGQ-rc2-00019-g2e23f88-dirty
+BGQ_VERSION := 3.4.22-BGQ-rc3
 
 KDIR := $(BGQ_MODULES)/lib/modules/$(BGQ_VERSION)/build
 ROQ := $(shell pwd)
