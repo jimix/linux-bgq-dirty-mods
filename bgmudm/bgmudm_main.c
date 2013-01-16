@@ -17,6 +17,8 @@
 #include <linux/dma-mapping.h>
 #include <linux/platform_device.h>
 
+#include "common.h"
+
 
 MODULE_LICENSE("Dual BSD/GPL");
 MODULE_DESCRIPTION("IBM Blue Gene/Q Message Unit module");
@@ -53,8 +55,28 @@ struct platform_driver bgmudm_driver = {
         },
 };
 
+unsigned long long __bgq_base_dma;
+unsigned long long _bgq_mu_dcr_mem_mapped_start_offset;
+
 static int __init bgmudm_module_init(void)
 {
+	void __iomem *dma;
+
+	dma = ioremap(__BGQ_BASE_DMA, 0x08000000);
+	if (!dma) {
+		pr_warn("%s: could not map base dma\n", __func__);
+		return -ENODEV;
+	}
+	__bgq_base_dma = (ulong)dma;
+
+	dma = ioremap( _BGQ_MU_DCR_MEM_MAPPED_START_OFFSET(), 0x08000000);
+	if (!dma) {
+		pr_warn("%s: could not map DCR mem\n", __func__);
+		iounmap((void *)__bgq_base_dma);
+		return -ENODEV;
+	}
+	_bgq_mu_dcr_mem_mapped_start_offset = (ulong)dma;
+
         /* Register the device */
         bgmudm = platform_device_register_simple("bgmudm", 0, NULL, 0);
         if(IS_ERR(bgmudm))
@@ -73,6 +95,8 @@ static  void __exit bgmudm_module_exit(void)
 {
         platform_driver_unregister(&bgmudm_driver);
         platform_device_unregister(bgmudm);
+	iounmap((void *)(ulong)__bgq_base_dma);
+	iounmap((void *)(ulong)_bgq_mu_dcr_mem_mapped_start_offset);
 
         return;
 

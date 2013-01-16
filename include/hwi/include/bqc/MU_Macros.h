@@ -55,7 +55,9 @@
 //#define _BGQ_BASE_DMA        0x3fffe000000ull // MSG Unit start address
 
 // MSG Unit Start Address (Supervisor access)
-#define _BGQ_BASE_DMA        (PHYMAP_MINADDR_MU + PHYMAP_PRIVILEGEDOFFSET)
+#define __BGQ_BASE_DMA        (PHYMAP_MINADDR_MU + PHYMAP_PRIVILEGEDOFFSET)
+extern unsigned long long __bgq_base_dma;
+#define _BGQ_BASE_DMA     __bgq_base_dma
 
 #define _BGQ_SIZE_DMA        1114112         // size  (17*65536 = 17*64K bytes)
 
@@ -248,8 +250,9 @@
 // MU DCR registers - new definition
 // ------------------------------------------------
 
-#define BGQ_MU_DCR_MEM_MAPPED_START_OFFSET()                    (PHYMAP_MINADDR_DCR + PHYMAP_PRIVILEGEDOFFSET)
-
+#define _BGQ_MU_DCR_MEM_MAPPED_START_OFFSET()                    (PHYMAP_MINADDR_DCR + PHYMAP_PRIVILEGEDOFFSET)
+extern unsigned long long _bgq_mu_dcr_mem_mapped_start_offset;
+#define BGQ_MU_DCR_MEM_MAPPED_START_OFFSET()    _bgq_mu_dcr_mem_mapped_start_offset
 
 #define BGQ_MU_DCR_iDMA_THRESHOLD_INTERRUPT_ENABLE_OFFSET(g)    (BGQ_MU_DCR_MEM_MAPPED_START_OFFSET() + ((MU_DCR(IMFIFO_THOLD_INT_EN)+(g)) * 8) )
 #define BGQ_MU_DCR_iDMA_SYSTEM_FIFO_OFFSET(g)                   (BGQ_MU_DCR_MEM_MAPPED_START_OFFSET() + ((MU_DCR(IMFIFO_SYSTEM)+(g)) * 8) )
