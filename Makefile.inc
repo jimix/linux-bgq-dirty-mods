@@ -8,7 +8,7 @@ all:
 	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
 
 install:
-	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules_install
+	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) INSTALL_MOD_PATH=$(BGQ_MODULES) modules_install
 
 clean:
 	$(RM) *.o *.ko *.mod.c .*.cmd
