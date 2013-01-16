@@ -21,6 +21,7 @@
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/kthread.h>
+#include <linux/of.h>
 
 #include <asm/bluegene.h>
 
@@ -31,6 +32,7 @@
 
 #include "bgvrnic.h"
 
+#include <platforms/bgq/bgq.h>
 
 MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR("Andrew Tauferner <ataufer@us.ibm.com>");
@@ -83,11 +85,26 @@ Personality_t _bgpers;
 
 static struct bgvrnic_device* _vrnic;
 
-extern int bglog_addFlightRecorder(BG_FlightRecorderRegistry_t*);
+int bglog_addFlightRecorder(BG_FlightRecorderRegistry_t *foo)
+{
+	return 0;
+}
 
 extern u32 bgq_io_reset_block_id;
 
+int bluegene_sendBlockStatus(u16 status, u16 argc, u64 argv[])
+{
+	u32 block_id;
 
+	BUG_ON(argc > 1);
+
+	if (argc == 1)
+		block_id = argv[0];
+	else
+		block_id = 0;
+
+	return bgq_block_state(status, block_id);
+}
 
 static int vrnic_thread(void* data)
 {
@@ -378,7 +395,32 @@ EXIT
         return rc;
 }
 
+int bluegene_getPersonality(void * buff, unsigned buffSize)
+{
+	struct device_node *dn;
+	const void *pers;
+	int pers_sz;
 
+	dn = of_find_compatible_node(NULL, NULL, "ibm,bgq-soc");
+	if (!dn) {
+		pr_info("%s: No BG/Q node\n", __func__);
+		return -ENODEV;
+	}
+	pers = of_get_property(dn, "ibm,bgq-personality", &pers_sz);
+	if (!pers) {
+		pr_emerg("%s: No BG/Q personality\n", __func__);
+		return -ENODEV;
+	}
+	if (pers_sz != buffSize) {
+		pr_emerg("%s: BG/Q personality bad size, got %d, expect %ld\n",
+			 __func__, pers_sz, sizeof(pers));
+	}
+	if (buffSize > pers_sz)
+		buffSize = pers_sz;
+	memcpy(buff, pers, buffSize);
+
+	return 0;
+}
 
 static int __init bgvrnic_module_init(void)
 {
