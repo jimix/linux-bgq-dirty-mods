@@ -25,6 +25,16 @@
 #include "mudm_macro.h"
 #include "common.h"
 
+#include <platforms/bgq/bgq.h>
+
+int bluegene_writeRAS(unsigned int msg_id, unsigned char is_binary,
+                      unsigned short len, void *msg)
+{
+	if (is_binary)
+		return bgq_ras_write(msg_id, msg, len);
+	return bgq_ras_puts(msg_id, msg);
+}
+
 int injectRAWRAS(uint32_t message_id, size_t raslength, const uint64_t* rasdata){
  return bluegene_writeRAS((unsigned int) message_id, (unsigned char) 1, (unsigned short) raslength, (void*)rasdata);
 }
