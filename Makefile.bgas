@@ -1,0 +1,56 @@
+#
+# This Makefile will take all the pieces below and create an
+# environement that can be used by the bgas scripts.
+#
+
+# The prefix for your cross compiler
+CROSS=/bgsys/drivers/ppcfloor/gnu-linux/bin/powerpc64-bgq-linux-
+
+# Where is your Linux tree built
+LINUX_BUILD=./bgq
+
+# This is the path to you primary ramdisk image.  it will get
+# un-archived first and then subsequent images will be un-archived on
+# top of it. in particular the modules.
+RD_PRIMARY=/gpfs/DDNgpfs1/jimix/work/bgq/linux/ramdisk/ramdisk.cpio.xz
+
+# directory where the kernel modules are installed, from INSTALL_MOD_PATH
+MOD_DIR=./modules
+
+.SECONDARY:
+
+#LZMA=xz --check=crc32 --powerpc --lzma2=dict=32MiB
+LZMA=lzma
+
+all: config/default linux_default.bgq ramdisk_default.gz
+
+ramdisk_default.gz: ramdisk.cpio.xz.bin.elf
+	cp $< $@
+
+linux_default.bgq: $(LINUX_BUILD)/arch/powerpc/boot/dtbImage.bgq
+	cp $< $@
+
+config:
+	mkdir config
+
+config/default: config
+	echo "linux PATCHSET=default" > $@
+	echo "roq ROQ_SILENT=1 ROQ_TRACING=0" >> $@
+
+modules.cpio.xz: $(shell find $(MOD_DIR) -type f -newer modules.cpio.xz)
+	(cd modules && find . | cpio -o -H newc | $(LZMA) --stdout > ../$@)
+
+ramdisk.cpio.xz: $(RD_PRIMARY) modules.cpio.xz
+	cat $^ > $@
+
+ramdisk.cpio.xz.bin: ramdisk.cpio.xz
+	$(CROSS)ld -b binary -e 0 -o $@ $^
+
+ramdisk.cpio.xz.bin.elf: ramdisk.cpio.xz.bin
+	$(CROSS)ld -T ../elf_header.lds -o $@
+
+clean:
+	$(RM) modules.cpio.xz ramdisk.cpio* ramdisk_default.gz
+
+clean_modules:
+	$(RM) -f $(MODULES)
